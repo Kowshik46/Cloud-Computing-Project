@@ -1,0 +1,105 @@
+#!/usr/bin/python3
+import os
+import cgitb
+cgitb.enable()
+import math
+import random
+import yfinance as yf
+import pandas as pd
+from datetime import date, timedelta
+from pandas_datareader import data as pdr
+import time 
+print( "Content-type: text/html\r\n\r\n" )
+#print( "<font size=+1>Environment</font><br /><br />" )
+#target = 'QUERY_STRING'
+#print("outside loop")
+start=time.time()
+strrr = os.environ['QUERY_STRING']
+strr=strrr.split("&")
+shots = int(strr[0])
+signal=int(strr[1])
+minhistory=int(strr[2])
+#print("shots =",shots,"<br />")
+#print("signal",signal,"<br />")
+#print("mindays",mindays,"<br />")
+#tmp = shots+signal+mindays
+#print("tmp",tmp)
+#for param in os.environ.keys():
+yf.pdr_override()
+
+
+# Get stock data from Yahoo Finance – here, asking for about 10 years of Gamestop
+# which had an interesting time in 2021: https://en.wikipedia.org/wiki/GameStop_short_squeeze 
+today = date.today()
+decadeAgo = today - timedelta(days=3652)
+
+data = pdr.get_data_yahoo('BP.L', start=decadeAgo, end=today)
+# Other symbols: TSLA – Tesla, AMZN – Amazon, NFLX – Netflix, BP.L – BP 
+
+
+# Add two columns to this to allow for Buy and Sell signals
+# fill with zero
+data['Buy']=0
+data['Sell']=0
+
+
+
+# Find the 4 different types of signals – uncomment print statements
+# if you want to look at the data these pick out in some another way
+for i in range(len(data)): 
+    # Hammer
+    realbody=math.fabs(data.Open[i]-data.Close[i])
+    bodyprojection=0.3*math.fabs(data.Close[i]-data.Open[i])
+
+    if data.High[i] >= data.Close[i] and data.High[i]-bodyprojection <= data.Close[i] and data.Close[i] > data.Open[i] and data.Open[i] > data.Low[i] and data.Open[i]-data.Low[i] > realbody:
+        data.at[data.index[i], 'Buy'] = 1
+        #print("BUY","H",data.index[i], data.Open[i], data.High[i], data.Low[i], data.Close[i])   
+
+    # Inverted Hammer
+    if data.High[i] > data.Close[i] and data.High[i]-data.Close[i] > realbody and data.Close[i] > data.Open[i] and data.Open[i] >= data.Low[i] and data.Open[i] <= data.Low[i]+bodyprojection:
+        data.at[data.index[i], 'Buy'] = 1
+        #print("BUY","I",data.index[i], data.Open[i], data.High[i], data.Low[i], data.Close[i])
+
+    # Hanging Man
+    if data.High[i] >= data.Open[i] and data.High[i]-bodyprojection <= data.Open[i] and data.Open[i] > data.Close[i] and data.Close[i] > data.Low[i] and data.Close[i]-data.Low[i] > realbody:
+        data.at[data.index[i], 'Sell'] = 1
+        #print("SELL,"M",data.index[i], data.Open[i], data.High[i], data.Low[i], data.Close[i])
+
+    # Shooting Star
+    if data.High[i] > data.Open[i] and data.High[i]-data.Open[i] > realbody and data.Open[i] > data.Close[i] and data.Close[i] >= data.Low[i] and data.Close[i] <= data.Low[i]+bodyprojection:
+        data.at[data.index[i], 'Sell'] = 1
+        #print("SELL","S",data.index[i], data.Open[i], data.High[i], data.Low[i], data.Close[i])
+risk95 =[]
+risk99=[]
+dateee =[]
+if signal == 0:
+    for i in range(minhistory, len(data)): 
+        if data.Buy[i]==1: # if we were only interested in Buy signals
+            mean=data.Close[i-minhistory:i].pct_change(1).mean()
+            std=data.Close[i-minhistory:i].pct_change(1).std()
+            simulated = [random.gauss(mean,std) for x in range(shots)]
+            simulated.sort(reverse=True)
+            var95_temp = simulated[int(len(simulated)*0.95)]
+            var99_temp = simulated[int(len(simulated)*0.99)]
+            dateee.append(((pd.to_datetime(data.index[i]).date()).strftime("%d/%m/%Y")))
+            risk95.append(var95_temp)
+            risk99.append(var99_temp)
+
+else :
+        for i in range(minhistory, len(data)): 
+            if data.Sell[i]==1: # if we were only interested in Buy signals
+                mean=data.Close[i-minhistory:i].pct_change(1).mean()
+                std=data.Close[i-minhistory:i].pct_change(1).std()
+                simulated = [random.gauss(mean,std) for x in range(shots)]
+                simulated.sort(reverse=True)
+                var95_temp = simulated[int(len(simulated)*0.95)]
+                var99_temp = simulated[int(len(simulated)*0.99)]
+                dateee.append(((pd.to_datetime(data.index[i]).date()).strftime("%d/%m/%Y")))
+                risk95.append(float(var95_temp))
+                risk99.append(float(var99_temp))
+        
+duration = time.time()-start
+
+stringoutput = '&'+str(dateee)+'&'+str(risk95)+'&'+str(risk99)+'&'+str(duration)
+
+print(stringoutput)
