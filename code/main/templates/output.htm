@@ -1,0 +1,82 @@
+<head>
+<title>Output</title>
+<style>
+ th, td {
+  border-style: double;
+  border-color: black;
+}
+</style>
+ <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['line']});
+      google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('date', 'Date');
+      data.addColumn('number', '95% Percentile');
+      data.addColumn('number', '99% Percentile');
+      data.addColumn('number', 'Average of 95 Percentile' );
+      data.addColumn('number', 'Average of 99 Percentile');
+      data.addRows([
+      	{% for row in data2 %}
+		[ new Date("{{ row[0] }}") ,{{ row[1] }},{{ row[2] }},{{ row[3] }},{{ row[4] }}],	
+	{% endfor %}
+            ]);
+      var options = {
+        width: 900,
+        height: 500,
+        axes: {
+          x: {
+            0: {side: 'top'}
+          }
+        }
+      };
+
+      var chart = new google.charts.Line(document.getElementById('line_top_x'));
+
+      chart.draw(data, google.charts.Line.convertOptions(options));
+    }
+  </script>
+</head>
+<body>
+<h3> Analysis of the BP.l Stock </h3>
+{% if Avg95 %}
+<h3 style="color: green">
+Average of 95 Percentiles across the data is{{ Avg95 }}
+</h3>
+{% endif %}
+{% if Avg99 %}
+<h3 style="color: green">
+Average of 99 Percentiles across the data is {{ Avg99 }}
+</h3>
+{% endif %}
+{% if note %}
+<h3 style="color: red">
+Time took for analysis is  {{ note }} Seconds
+</h3>
+{% endif %}
+<h3 class="content">Output Graphs</h3>
+<div id="line_top_x"></div>
+<h3>
+<button onclick="javascript:history.back()">Go Back to Rerun analysis</button>
+</h3>
+<h3>Detailed table of the analysis</h3>
+<table>
+<tr>
+	<th> Date </th>
+	<th> 95 Percentile </th>
+	<th> 99 Percentile </th>
+</tr>
+{% for row in data %}
+<tr>
+{% for cell in row %}
+<td>	{{ cell }}			</td>
+{% endfor %}
+</tr>	
+{% endfor %}
+
+
+
+

@@ -1,0 +1,32 @@
+<head>
+<title>Audit </title>
+<style>
+ th, td {
+  border-style: double;
+  border-color: black;
+}
+</style>
+</head><body><h3>
+Audit Information </h3> </body>
+
+<table>
+<tr>
+	<th> Service Used </th>
+	<th> Parallel Resourses Used </th>
+	<th> MinHistory </th>
+	<th> Signal Selected</th>
+	<th> Shots Selected </th>
+	<th> 95% Confidence  </th>
+	<th> 95% Confidence </th>
+	<th> Time </th>
+</tr>
+{% for row in note %}
+<tr>
+{% for cell in row %}
+{% if cell[5] != 0.0 %}
+<td> {{ cell }} </td>			
+{% endif %}
+{% endfor %}
+</tr>	
+{% endfor %}
+

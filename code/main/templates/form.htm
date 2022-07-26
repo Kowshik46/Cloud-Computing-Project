@@ -1,0 +1,19 @@
+<div id="down">
+<h3>Please Select your options  :&nbsp;</h3>
+<form id="form" method="post" action="/display">
+<h4>Please select your prefered service : <select name ="Services" id ="services" >
+<option value="lam"> Lambda</option>
+<option value  ="ec2"> EC2 </option>
+</select>
+ <br/></h4>
+<h4>Number of Parallel resources to use : <input type="text" 
+name="parallel" type=number /><br/></h4>
+<input type="submit" name='start' value="Start Requested Services"/><br/></h4></form>
+<form id="form2" method="post" action="/history">
+<h4><input type="submit" name="history" value="History" onclick="/history" /></form>
+{% if note %}
+<h3 style="color: #11FFFF">
+{{ note }}
+</h3>
+{% endif %}
+</div>
